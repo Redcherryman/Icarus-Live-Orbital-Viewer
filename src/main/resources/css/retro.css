@@ -1,0 +1,162 @@
+/*
+ * Copyright 2026 Aiden Joshua-Steven Scoggins (Aiden J.S. Scoggins)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* ==========================================================================
+   ICARUS-OV :: Retro-Futurist CRT Theme (1980s-90s)
+   Palette: cyber cyan / phosphor green / warning amber / near-black
+   ========================================================================== */
+
+.root {
+    -fx-background-color: #05070d;
+    -fx-font-family: "Consolas", "Courier New", monospace;
+}
+
+/* ---- top status / title bar -------------------------------------------- */
+.top-bar {
+    -fx-padding: 10 16 10 16;
+    -fx-background-color: #070b12;
+    -fx-border-color: #1b3a5c;
+    -fx-border-width: 0 0 1 0;
+}
+.title-label {
+    -fx-text-fill: #5df2ff;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-letter-spacing: 2;
+}
+.title-sub {
+    -fx-text-fill: #ffb24d;
+    -fx-font-size: 11px;
+    -fx-letter-spacing: 3;
+}
+.status-chip {
+    -fx-text-fill: #86ffb0;
+    -fx-font-size: 10px;
+    -fx-background-color: #0a1715;
+    -fx-background-radius: 3;
+    -fx-border-color: #2f7a55;
+    -fx-border-radius: 3;
+    -fx-border-width: 1;
+    -fx-padding: 3 8 3 8;
+}
+
+/* ---- central 3D viewport ----------------------------------------------- */
+.viewport {
+    -fx-background-color: #02040a;
+    -fx-border-color: #1b3a5c;
+    -fx-border-width: 1;
+}
+.viewport-hint {
+    -fx-text-fill: #2f5f7a;
+    -fx-font-size: 12px;
+    -fx-letter-spacing: 2;
+}
+
+/* ---- side object panel ------------------------------------------------- */
+.side-panel {
+    -fx-background-color: #060a12;
+    -fx-border-color: #1b3a5c;
+    -fx-border-width: 0 0 0 1;
+    -fx-padding: 10;
+}
+.panel-title {
+    -fx-text-fill: #5df2ff;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-letter-spacing: 2;
+}
+.filter-check {
+    -fx-text-fill: #b8e6ff;
+    -fx-font-size: 11px;
+}
+.filter-check .box {
+    -fx-border-color: #3aa0c9;
+    -fx-background-color: #081018;
+}
+.filter-check:selected .mark {
+    -fx-background-color: #5df2ff;
+}
+.object-list {
+    -fx-background-color: #050a12;
+    -fx-border-color: #1b3a5c;
+    -fx-border-width: 1;
+    -fx-text-fill: #cfeaff;
+    -fx-font-size: 11px;
+    -fx-control-inner-background: #050a12;
+    -fx-selection-bar: #0e2b3c;
+    -fx-selection-bar-non-focused: #0e2b3c;
+}
+.object-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #cfeaff;
+    -fx-padding: 4 8 4 8;
+}
+.object-list .list-cell:filled:hover {
+    -fx-background-color: #0d2433;
+}
+
+/* ---- telemetry console ------------------------------------------------- */
+.console {
+    -fx-background-color: #04070e;
+    -fx-border-color: #1b3a5c;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 8;
+}
+.telemetry {
+    -fx-padding: 6 12 6 12;
+}
+.tel-key {
+    -fx-text-fill: #ffb24d;
+    -fx-font-size: 11px;
+    -fx-letter-spacing: 1;
+}
+.tel-val {
+    -fx-text-fill: #9af5c0;
+    -fx-font-size: 11px;
+}
+.log-area {
+    -fx-background-color: #03050c;
+    -fx-border-color: #122b3f;
+    -fx-border-width: 1;
+    -fx-text-fill: #6fdc9a;
+    -fx-font-size: 11px;
+    -fx-control-inner-background: #03050c;
+}
+
+/* ---- footer with author credit ----------------------------------------- */
+.footer {
+    -fx-background-color: #070b12;
+    -fx-border-color: #1b3a5c;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 4 12 4 12;
+}
+.footer-text {
+    -fx-text-fill: #3aa0c9;
+    -fx-font-size: 10px;
+    -fx-letter-spacing: 1;
+}
+.footer-license {
+    -fx-text-fill: #7a5c2e;
+    -fx-font-size: 10px;
+}
+
+/* ---- scrollbars -------------------------------------------------------- */
+.scroll-bar .thumb {
+    -fx-background-color: #1b3a5c;
+}
+.scroll-bar .track {
+    -fx-background-color: #070b12;
+}

@@ -1,0 +1,27 @@
+# Build outputs
+build/
+out/
+*.class
+*.jar
+
+# Gradle
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+gradle/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+bin/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Local caches / logs
+*.log
+cache/
