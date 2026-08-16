@@ -48,6 +48,10 @@ dependencies {
     // JSON parsing (NASA / CelesTrak payloads)
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
 
+    // SGP4 orbital propagation (Orekit, Apache-2.0). Used to turn the
+    // fetched TLE elements into live positions/altitudes/ground tracks.
+    implementation 'org.orekit:orekit:12.1.1'
+
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

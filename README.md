@@ -15,6 +15,10 @@ You may download, use and redistribute this software freely.
 
 For the full license text, see [LICENSE](LICENSE).
 Reference: http://www.apache.org/licenses/LICENSE-2.0
+Live positions are not streamed: CelesTrak/NASA publish **TLE orbital elements**,
+and ICARUS-OV turns them into live ECI positions with **SGP4** (the Apache-2.0
+Orekit library). Select any object to read its live altitude, velocity, period
+and inclination in the telemetry console.
 
 ## Data Sources (free, no API keys required)
 

@@ -19,6 +19,8 @@ import com.icarus_ov.IcarusOvApplication;
 import com.icarus_ov.data.DataService;
 import com.icarus_ov.model.SpaceObject;
 import com.icarus_ov.model.SpaceObjectType;
+import com.icarus_ov.model.TrackPoint;
+import com.icarus_ov.propagation.PropagationEngine;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -87,6 +89,9 @@ public final class MainController {
 
     private StackPane viewport;
     private Label statusChip;
+
+    // Live SGP4 engine: computes positions/altitudes from the loaded TLEs.
+    private final PropagationEngine engine = new PropagationEngine();
 
     /** Main constructor sets up a filtered, type-aware backing list. */
     public MainController() {
@@ -228,7 +233,10 @@ public final class MainController {
         addTelemetryRow(left, "TYPE", "-----");
         addTelemetryRow(left, "SOURCE", "------");
         addTelemetryRow(left, "TLE_EPOCH", "-");
-        addTelemetryRow(left, "REVS/DAY", "-");
+        addTelemetryRow(left, "ALTITUDE", "-");
+        addTelemetryRow(left, "VELOCITY", "-");
+        addTelemetryRow(left, "PERIOD", "-");
+        addTelemetryRow(left, "INCLINATION", "-");
 
         this.logArea.setEditable(false);
         this.logArea.setWrapText(true);
@@ -270,7 +278,19 @@ public final class MainController {
         set("TYPE", s.type().displayName());
         set("SOURCE", s.source());
         set("TLE_EPOCH", s.properties().getOrDefault("tle_epoch_yyddd", "-"));
-        set("REVS/DAY", s.properties().getOrDefault("revs_per_day", "-"));
+
+        final TrackPoint tp = engine.propagate(s, engine.now());
+        if (tp == null) {
+            set("ALTITUDE", "n/a");
+            set("VELOCITY", "n/a");
+            set("PERIOD", "n/a");
+            set("INCLINATION", "n/a");
+            return;
+        }
+        set("ALTITUDE", String.format("%.1f km", tp.altitudeKm));
+        set("VELOCITY", String.format("%.3f km/s", tp.speedKmPerSec));
+        set("PERIOD", String.format("%.1f min", tp.periodMinutes));
+        set("INCLINATION", String.format("%.2f deg", tp.inclinationDeg));
     }
 
     private void set(final String key, final String value) {
@@ -287,7 +307,10 @@ public final class MainController {
             protected List<SpaceObject> call() {
                 loadLog.clear();
                 loadLog.add("SYSTEM ONLINE :: ICARUS-OV " + System.getProperty("java.version"));
-                return dataService.loadAll(loadLog::add);
+                final List<SpaceObject> data = dataService.loadAll(loadLog::add);
+                engine.registerAll(data);
+                loadLog.add("== SGP4 propagators ready: " + engine.size() + " ==");
+                return data;
             }
         };
         task.setOnRunning(e -> logArea.clear());
