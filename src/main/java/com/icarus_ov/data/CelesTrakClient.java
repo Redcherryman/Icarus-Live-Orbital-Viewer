@@ -80,22 +80,36 @@ public class CelesTrakClient {
         return BASE + "?GROUP=" + g + "&FORMAT=tle";
     }
 
-    /** Performs a blocking GET and returns the body, or {@code null} on failure. */
+    /** Performs a GET with retries/backoff; returns body or {@code null}. */
     private String get(final String url) {
-        try {
-            final HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(Duration.ofSeconds(12))
-                    .header("User-Agent", "ICARUS-OV/0.1 (public NASA data)")
-                    .GET()
-                    .build();
-            final HttpResponse<String> res =
-                    http.send(req, HttpResponse.BodyHandlers.ofString());
-            return res.statusCode() == 200 ? res.body() : null;
-        } catch (final IOException | InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return null;
+        int backoffMs = 1500;
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            try {
+                final HttpRequest req = HttpRequest.newBuilder()
+                        .uri(URI.create(url))
+                        .timeout(Duration.ofSeconds(25))
+                        .header("User-Agent", "ICARUS-OV/0.1 (public NASA data)")
+                        .GET()
+                        .build();
+                final HttpResponse<String> res =
+                        http.send(req, HttpResponse.BodyHandlers.ofString());
+                if (res.statusCode() == 200) {
+                    return res.body();
+                }
+                // 429 / 5xx -> polite backoff, then retry.
+            } catch (final IOException | InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+            try {
+                Thread.sleep(backoffMs);
+            } catch (final InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+            backoffMs *= 2;
         }
+        return null;
     }
 
     /**

@@ -57,21 +57,31 @@ public final class DataService {
             byKey.put(key(s), s);
         }
 
-        log.log(">> contact CelesTrak / stations (ISS) ...");
+        log.log(">> contact CelesTrak / stations (ISS + manned) ...");
         addAll(byKey, celesTrak.fetchGroup("stations", SpaceObjectType.SATELLITE, 0),
                 log, "CelesTrak stations");
+        politeDelay();
 
-        log.log(">> contact CelesTrak / active & visual sats ...");
+        log.log(">> contact CelesTrak / all active satellites ...");
+        addAll(byKey, celesTrak.fetchGroup("active", SpaceObjectType.SATELLITE, 5000),
+                log, "CelesTrak active");
+        politeDelay();
+
+        log.log(">> contact CelesTrak / bright visual satellites ...");
         addAll(byKey, celesTrak.fetchGroup("visual", SpaceObjectType.SATELLITE, 400),
                 log, "CelesTrak visual");
+        politeDelay();
 
-        log.log(">> contact CelesTrak / starlink ...");
-        addAll(byKey, celesTrak.fetchGroup("starlink", SpaceObjectType.STARLINK, 600),
+        log.log(">> contact CelesTrak / starlink constellation ...");
+        addAll(byKey, celesTrak.fetchGroup("starlink", SpaceObjectType.STARLINK, 2000),
                 log, "CelesTrak starlink");
+        politeDelay();
 
-        log.log(">> contact CelesTrak / debris ...");
-        addAll(byKey, celesTrak.fetchGroup("debris", SpaceObjectType.DEBRIS, 300),
-                log, "CelesTrak debris");
+        // NOTE: the truly "ALL tracked debris" catalog (fragmentation, derelict
+        // rocket bodies, space junk) is only published on Space-Track.org, which
+        // requires an account. ICARUS-OV is a public-only release and therefore
+        // deliberately omits it. The sample catalog supplies a few debris entries.
+        log.log("   [skipped] full debris catalog requires Space-Track login");
 
         log.log(">> contact NASA JPL SSD / asteroids ...");
         for (final SpaceObject a : jpl.fetchCloseApproaches(20)) {
@@ -86,6 +96,15 @@ public final class DataService {
         final List<SpaceObject> merged = new ArrayList<>(byKey.values());
         log.log(String.format("== catalog ready: %d tracked objects ==", merged.size()));
         return merged;
+    }
+
+    /** Short pause between source requests to stay polite to the hosts. */
+    private void politeDelay() {
+        try {
+            Thread.sleep(1200L);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private void addAll(final Map<String, SpaceObject> sink,
