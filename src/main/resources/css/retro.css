@@ -153,6 +153,23 @@
     -fx-font-size: 10px;
 }
 
+/* ---- HUD overlay controls ------------------------------------------------ */
+.hud-button {
+    -fx-text-fill: #5df2ff;
+    -fx-background-color: rgba(5, 12, 20, 0.85);
+    -fx-background-radius: 3;
+    -fx-border-color: #3aa0c9;
+    -fx-border-radius: 3;
+    -fx-border-width: 1;
+    -fx-font-size: 11px;
+    -fx-letter-spacing: 1;
+    -fx-padding: 5 14 5 14;
+    -fx-cursor: hand;
+}
+.hud-button:hover {
+    -fx-background-color: #0e2b3c;
+}
+
 /* ---- scrollbars -------------------------------------------------------- */
 .scroll-bar .thumb {
     -fx-background-color: #1b3a5c;

@@ -17,6 +17,7 @@ package com.icarus_ov.ui;
 
 import com.icarus_ov.IcarusOvApplication;
 import com.icarus_ov.data.DataService;
+import com.icarus_ov.fx3d.LiveViewport;
 import com.icarus_ov.model.SpaceObject;
 import com.icarus_ov.model.SpaceObjectType;
 import com.icarus_ov.model.TrackPoint;
@@ -93,6 +94,9 @@ public final class MainController {
     // Live SGP4 engine: computes positions/altitudes from the loaded TLEs.
     private final PropagationEngine engine = new PropagationEngine();
 
+    // Retro 3D viewport (attached to the centre pane during build()).
+    private LiveViewport liveViewport;
+
     /** Main constructor sets up a filtered, type-aware backing list. */
     public MainController() {
         this.shown = new FilteredList<>(catalog, this::passesFilters);
@@ -115,6 +119,9 @@ public final class MainController {
 
     /** Called once the stage is shown; kicks off the live data load. */
     public void afterShow() {
+        if (liveViewport != null) {
+            liveViewport.start();
+        }
         loadLiveData();
     }
 
@@ -149,9 +156,9 @@ public final class MainController {
         this.viewport.getStyleClass().add("viewport");
         viewport.setCenterShape(true);
 
-        final Label hint = new Label("[ 3D VIEWPORT MOUNT // RENDER STAGE LOCKED ]");
-        hint.getStyleClass().add("viewport-hint");
-        viewport.getChildren().add(hint);
+        // Attach the retro 3D live viewport (earth + neon object clouds).
+        this.liveViewport = new LiveViewport(engine, shown);
+        this.liveViewport.attach(viewport);
 
         final VBox side = buildSidePanel();
         side.setMinWidth(280);
