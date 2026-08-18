@@ -83,3 +83,50 @@ tasks.register('fatJar', Jar) {
 }
 
 build.dependsOn tasks.named('fatJar')
+
+// ---------------------------------------------------------------------------
+// Native packaging with jpackage (bundles a JRE: users need no Java install).
+// ---------------------------------------------------------------------------
+
+// Locate the jpackage launcher from the JDK running this build.
+def jdk = System.getProperty('java.home')
+def jpackageExe = file("${jdk}/bin/jpackage.exe").isFile()
+        ? "${jdk}/bin/jpackage.exe"
+        : (file("${jdk}/bin/jpackage").isFile() ? "${jdk}/bin/jpackage" : null)
+
+def pkg = [
+        '--input', 'build/libs',
+        '--main-jar', "Icarus-OV-${project.version}-all.jar",
+        '--main-class', 'com.icarus_ov.Launcher',
+        '--name', 'ICARUS-OV',
+        '--app-version', "${project.version}",
+        '--description',
+        'Live orbital tracking viewer powered by public NASA data. Retro 1980s-90s CRT interface.',
+        '--copyright', 'Copyright 2026 Aiden Joshua-Steven Scoggins',
+        '--license-file', 'LICENSE',
+        '--dest', 'build/installer',
+]
+
+// Self-contained application image (portable folder, runnable on any machine).
+tasks.register('packageApp', Exec) {
+    dependsOn tasks.named('fatJar')
+    enabled = jpackageExe != null
+    commandLine([jpackageExe] + pkg + ['--type', 'app-image'])
+    doFirst { delete 'build/installer' }
+}
+
+// Native Windows MSI installer (requires the WiX Toolset on PATH).
+tasks.register('packageMsi', Exec) {
+    dependsOn tasks.named('fatJar')
+    enabled = jpackageExe != null
+    commandLine([jpackageExe] + pkg + ['--type', 'msi', '--win-menu', '--win-shortcut'])
+    doFirst { delete 'build/installer' }
+}
+
+// Linux Debian/RPM installers (generated on Linux machines).
+tasks.register('packageLinux', Exec) {
+    dependsOn tasks.named('fatJar')
+    enabled = jpackageExe != null
+    commandLine([jpackageExe] + pkg + ['--type', 'deb'])
+    doFirst { delete 'build/installer' }
+}

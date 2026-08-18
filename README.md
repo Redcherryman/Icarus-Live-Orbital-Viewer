@@ -30,6 +30,24 @@ and inclination in the telemetry console.
 
 All orbital predictions are computed locally from TLE orbital elements (SGP4).
 
+## Build & Install
+
+Requirements: a JDK 21+ and Gradle (or use the included CI workflow).
+
+```powershell
+gradle build          # compile + run tests + build the self-contained fat jar
+gradle packageApp     # build a bundled application image (portable, no Java needed)
+gradle packageMsi     # Windows MSI installer (requires the WiX Toolset)
+```
+
+- **Application image** appears in `build/installer/ICARUS-OV/` and runs
+  `ICARUS-OV.exe` directly — the JRE is bundled, so end users install nothing.
+- **Installers / archives** for Windows, Linux and macOS are built automatically
+  by the `.github/workflows/release.yml` workflow when a `v*` tag is pushed.
+- The fat jar (`build/libs/Icarus-OV-<version>-all.jar`) is also runnable via
+  `java -jar`.
+
+## Copyright and Licensing
 ## Copyright and Licensing
 
 ```
