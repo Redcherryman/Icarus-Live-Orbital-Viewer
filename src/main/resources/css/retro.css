@@ -89,6 +89,28 @@
 .filter-check:selected .mark {
     -fx-background-color: #5df2ff;
 }
+.search-field {
+    -fx-background-color: #081018;
+    -fx-border-color: #3aa0c9;
+    -fx-border-width: 1;
+    -fx-text-fill: #cfeaff;
+    -fx-prompt-text-fill: #3f6f8a;
+    -fx-font-size: 11px;
+}
+.time-btn {
+    -fx-text-fill: #ffb24d;
+    -fx-background-color: rgba(10, 17, 26, 0.9);
+    -fx-background-radius: 2;
+    -fx-border-color: #2f7a55;
+    -fx-border-radius: 2;
+    -fx-border-width: 1;
+    -fx-font-size: 10px;
+    -fx-padding: 3 8 3 8;
+    -fx-cursor: hand;
+}
+.time-btn:hover {
+    -fx-background-color: #0e2b3c;
+}
 .object-list {
     -fx-background-color: #050a12;
     -fx-border-color: #1b3a5c;

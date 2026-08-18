@@ -36,6 +36,7 @@ import javafx.util.Duration;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.Supplier;
 
 /**
  * ICARUS-OV :: Orbital Live Viewer
@@ -50,11 +51,18 @@ public final class LiveViewport {
 
     private static final int CLOUD_CAPACITY = 12000;
     private static final int STAR_COUNT = 1400;
+    private static final int PATH_STEPS = 240;
     private static final double TICK_MS = 500.0;
 
     private final PropagationEngine engine;
     private final ObservableList<SpaceObject> shown;
+    private final Supplier<org.orekit.time.AbsoluteDate> clock;
     private final CameraRig rig = new CameraRig();
+
+    private final PointCloud pathCloud;
+    private SpaceObject selected;
+    private boolean showPath;
+    private final float[] pathBuf = new float[PATH_STEPS * 3];
 
     private final Map<SpaceObjectType, PointCloud> clouds =
             new EnumMap<>(SpaceObjectType.class);
@@ -68,9 +76,12 @@ public final class LiveViewport {
 
     /** Builds the viewport bound to the given engine and visible list. */
     public LiveViewport(final PropagationEngine engine,
-                        final ObservableList<SpaceObject> shown) {
+                        final ObservableList<SpaceObject> shown,
+                        final Supplier<org.orekit.time.AbsoluteDate> clock) {
         this.engine = engine;
         this.shown = shown;
+        this.clock = clock;
+        this.pathCloud = PointCloud.create(Color.web("#ffd166"), PATH_STEPS);
         for (final SpaceObjectType type : SpaceObjectType.values()) {
             clouds.put(type, PointCloud.create(type.markerColor(), CLOUD_CAPACITY));
             buffers.put(type, new float[CLOUD_CAPACITY * 3]);
@@ -90,6 +101,7 @@ public final class LiveViewport {
         final Group world = new Group();
         world.getChildren().add(RetroEarth.build());
         world.getChildren().add(buildStars().view());
+        world.getChildren().add(pathCloud.view());
         for (final PointCloud cloud : clouds.values()) {
             world.getChildren().add(cloud.view());
         }
@@ -107,10 +119,30 @@ public final class LiveViewport {
         follow.setOnAction(e -> rig.setFollow(!rig.isFollow(),
                 issScene[0], issScene[1], issScene[2]));
 
+        final Button path = new Button("ORBIT PATH");
+        path.getStyleClass().add("hud-button");
+        path.setOnAction(e -> {
+            showPath = !showPath;
+            path.setText(showPath ? "ORBIT PATH: ON" : "ORBIT PATH");
+        });
+
         holder.getChildren().add(sub);
         holder.getChildren().add(follow);
+        holder.getChildren().add(path);
         StackPane.setAlignment(follow, Pos.BOTTOM_CENTER);
         StackPane.setMargin(follow, new Insets(0, 0, 10, 0));
+        StackPane.setAlignment(path, Pos.BOTTOM_RIGHT);
+        StackPane.setMargin(path, new Insets(0, 10, 10, 0));
+    }
+
+    /** Selects the object whose orbit path is drawn. */
+    public void setSelected(final SpaceObject object) {
+        this.selected = object;
+    }
+
+    /** Toggles orbit-path tracing for the selected object. */
+    public void setShowPath(final boolean value) {
+        this.showPath = value;
     }
 
     /** Starts the live update loop. */
@@ -143,7 +175,7 @@ public final class LiveViewport {
 
     /** Re-propagates the visible catalog and repaints the point clouds. */
     private void tick() {
-        final var date = engine.now();
+        final var date = clock.get();
         counts.replaceAll((k, v) -> 0);
         for (final SpaceObject s : shown) {
             final TrackPoint tp = engine.propagate(s, date);
@@ -171,6 +203,35 @@ public final class LiveViewport {
                 e.getValue().update(buffers.get(e.getKey()), n);
             }
         }
+        drawPath(date);
         rig.updateFollow();
+    }
+
+    /** Renders the selected object's predicted orbit as a dotted path. */
+    private void drawPath(final org.orekit.time.AbsoluteDate now) {
+        if (!showPath || selected == null) {
+            pathCloud.update(pathBuf, 0);
+            return;
+        }
+        final TrackPoint t0 = engine.propagate(selected, now);
+        if (t0 == null) {
+            pathCloud.update(pathBuf, 0);
+            return;
+        }
+        final double periodSec = t0.periodMinutes * 60.0;
+        int n = 0;
+        for (int i = 0; i < PATH_STEPS; i++) {
+            final double t = (i / (double) PATH_STEPS - 0.25) * periodSec;
+            final TrackPoint tp = engine.propagate(selected, now.shiftedBy(t));
+            if (tp == null) {
+                continue;
+            }
+            final double[] sc = CoordinateMath.toScene(tp);
+            pathBuf[n * 3] = (float) sc[0];
+            pathBuf[n * 3 + 1] = (float) sc[1];
+            pathBuf[n * 3 + 2] = (float) sc[2];
+            n++;
+        }
+        pathCloud.update(pathBuf, n);
     }
 }

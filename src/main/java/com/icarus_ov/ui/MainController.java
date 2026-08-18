@@ -22,6 +22,7 @@ import com.icarus_ov.model.SpaceObject;
 import com.icarus_ov.model.SpaceObjectType;
 import com.icarus_ov.model.TrackPoint;
 import com.icarus_ov.propagation.PropagationEngine;
+import com.icarus_ov.propagation.SimClock;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -32,11 +33,13 @@ import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -47,6 +50,7 @@ import javafx.scene.paint.Color;
 
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -80,6 +84,7 @@ public final class MainController {
 
     private final ListView<SpaceObject> objectList = new ListView<>();
     private final TextArea logArea = new TextArea();
+    private TextField searchField;
 
     // Telemetry readouts (key -> value Label), refreshed on selection.
     private final Map<String, Label> telemetry = new java.util.LinkedHashMap<>();
@@ -93,6 +98,9 @@ public final class MainController {
 
     // Live SGP4 engine: computes positions/altitudes from the loaded TLEs.
     private final PropagationEngine engine = new PropagationEngine();
+
+    // Controllable simulation clock (pause / time-warp).
+    private final SimClock simClock = new SimClock();
 
     // Retro 3D viewport (attached to the centre pane during build()).
     private LiveViewport liveViewport;
@@ -112,7 +120,12 @@ public final class MainController {
         this.objectList.setItems(shown);
         this.objectList.setCellFactory(v -> new ObjectCell());
         this.objectList.getSelectionModel().selectedItemProperty()
-                .addListener((obs, oldV, newV) -> updateTelemetry(newV));
+                .addListener((obs, oldV, newV) -> {
+                    updateTelemetry(newV);
+                    if (liveViewport != null) {
+                        liveViewport.setSelected(newV);
+                    }
+                });
 
         return root;
     }
@@ -157,7 +170,7 @@ public final class MainController {
         viewport.setCenterShape(true);
 
         // Attach the retro 3D live viewport (earth + neon object clouds).
-        this.liveViewport = new LiveViewport(engine, shown);
+        this.liveViewport = new LiveViewport(engine, shown, simClock::now);
         this.liveViewport.attach(viewport);
 
         final VBox side = buildSidePanel();
@@ -178,6 +191,17 @@ public final class MainController {
         title.getStyleClass().add("panel-title");
         panel.getChildren().add(title);
 
+        // Live name/NORAD search.
+        this.searchField = new TextField();
+        searchField.setPromptText("SEARCH NAME / NORAD ID");
+        searchField.getStyleClass().add("search-field");
+        searchField.textProperty().addListener((obs, o, n) ->
+                shown.setPredicate(this::passesFilters));
+        panel.getChildren().add(searchField);
+
+        // Time-warp controls: pause / play and speed factors.
+        panel.getChildren().add(buildTimeRow());
+
         final VBox filterBox = new VBox(4);
         for (final SpaceObjectType type : SpaceObjectType.values()) {
             final CheckBox cb = new CheckBox(type.displayName());
@@ -195,6 +219,33 @@ public final class MainController {
         VBox.setVgrow(objectList, Priority.ALWAYS);
         panel.getChildren().add(objectList);
         return panel;
+    }
+
+    /** Time-warp row: pause/play + 1x, 2x, 10x speed buttons. */
+    private HBox buildTimeRow() {
+        final Button pause = new Button("PAUSE");
+        pause.getStyleClass().add("time-btn");
+        pause.setOnAction(e -> {
+            simClock.setPaused(!simClock.isPaused());
+            pause.setText(simClock.isPaused() ? "PLAY" : "PAUSE");
+        });
+
+        final Button one = new Button("1x");
+        final Button two = new Button("2x");
+        final Button ten = new Button("10x");
+        for (final Button b : new Button[]{one, two, ten}) {
+            b.getStyleClass().add("time-btn");
+        }
+        one.setOnAction(e -> simClock.setSpeed(1.0));
+        two.setOnAction(e -> simClock.setSpeed(2.0));
+        ten.setOnAction(e -> simClock.setSpeed(10.0));
+
+        final Label label = new Label("TIME:");
+        label.getStyleClass().add("tel-key");
+
+        final HBox row = new HBox(4, label, pause, one, two, ten);
+        row.setAlignment(Pos.CENTER_LEFT);
+        return row;
     }
 
     /** A small color-key legend mapping categories to neon markers. */
@@ -269,10 +320,22 @@ public final class MainController {
         telemetry.put(key, v);
     }
 
-    /** Category filter predicate driven by the checkbox panel. */
+    /** Category filter + live search predicate. */
     private boolean passesFilters(final SpaceObject s) {
         final CheckBox cb = filters.get(s.type());
-        return cb == null || cb.isSelected();
+        if (cb != null && !cb.isSelected()) {
+            return false;
+        }
+        final TextField sf = searchField;
+        if (sf == null) {
+            return true;
+        }
+        final String q = sf.getText().trim().toLowerCase(Locale.ROOT);
+        if (q.isEmpty()) {
+            return true;
+        }
+        return s.name().toLowerCase(Locale.ROOT).contains(q)
+                || s.id().toLowerCase(Locale.ROOT).contains(q);
     }
 
     /** Fills the telemetry console for the currently selected object. */
@@ -286,7 +349,7 @@ public final class MainController {
         set("SOURCE", s.source());
         set("TLE_EPOCH", s.properties().getOrDefault("tle_epoch_yyddd", "-"));
 
-        final TrackPoint tp = engine.propagate(s, engine.now());
+        final TrackPoint tp = engine.propagate(s, simClock.now());
         if (tp == null) {
             set("ALTITUDE", "n/a");
             set("VELOCITY", "n/a");
